@@ -5,7 +5,7 @@ class TrieNode:
     def __init__(self):
         self.children = {}
         self.is_end_of_word = False
-        self.data = None  # can be used to store metadata for a word
+        self.data_list = []
 
 class Trie:
     def __init__(self):
@@ -18,7 +18,10 @@ class Trie:
                 node.children[char] = TrieNode()
             node = node.children[char]
         node.is_end_of_word = True
-        node.data = data
+        if node.data_list:
+            node.data_list.append(data)
+        else:
+            node.data_list = [data]
 
     def search(self, word):
         node = self.root
@@ -27,5 +30,5 @@ class Trie:
                 return None
             node = node.children[char]
         if node.is_end_of_word:
-            return node.data
+            return node.data_list
         return None
