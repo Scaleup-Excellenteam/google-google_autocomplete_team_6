@@ -40,44 +40,49 @@ def init(data_directory):
     return trie
 
 
-def search_trie(trie,sentence):
-    gussed_sentence = []
-    words = sentence.lower().split()
-    first_word_matches = trie.search(words[0])
+def check_next_word_match(trie, current_match, word, word_index, mismatched):
+    next_word_matches = trie.search(word)
 
-    for match in first_word_matches: # over the lines that contain the first word need to make sure about first word is wrong
-        mismatched = False
+    for next_match in next_word_matches:
+        if (
+                next_match["file_name"] == current_match["file_name"]
+                and next_match["line_number"] == current_match["line_number"]
+                and (next_match["word_index"] == word_index or (
+                not mismatched and next_match["word_index"] == word_index + 1))
+        ):
+            return True, mismatched
 
-        word_index = match["word_index"]
+    if not mismatched:
+        return True, True  # Mark mismatched as True
+    return False, mismatched  # No sequence match found
 
-        for i, word in enumerate(words[1:], 1):  # start from the second word
+
+def check_sequence_match(trie, current_match, words, mismatched, start_index):
+    word_index = current_match["word_index"]
+
+    for i, word in enumerate(words[start_index:], start_index):  # start from the second word
+        word_index += 1
+        found_in_sequence, mismatched = check_next_word_match(trie, current_match, word, word_index, mismatched)
+        if not found_in_sequence and mismatched:
+            return False
+        if not found_in_sequence:
             word_index += 1
-            next_word_matches = trie.search(word)
+    return True  # Sequence match found
 
-            found_in_sequence = False
-            for next_match in next_word_matches:
-                if (
-                        next_match["file_name"] == match["file_name"]
-                        and next_match["line_number"] == match["line_number"]
-                        and (next_match["word_index"] == word_index or (
-                        not mismatched and next_match["word_index"] == word_index + 1))
-                ):
-                    found_in_sequence = True
-                    break
 
-            # If we did not find the word in sequence, and we already had one mismatch
-            if not found_in_sequence and mismatched:
-                break
-            # If we did not find the word in sequence, but we had no mismatches yet
-            elif not found_in_sequence:
-                mismatched = True
-                word_index += 1
+def search_trie(trie,sentence):
+    words = sentence.lower().split()
+    mismatched = False
+    start_index = 1
+    first_word_matches = trie.search(words[0])
+    if not first_word_matches:
+        first_word_matches = trie.search(words[1])
+        mismatched = True
+        start_index = 2
 
-            # If we're on the last word of the input sentence and it matches the constraints
-            if i == len(words) - 1 and found_in_sequence:
-                gussed_sentence.append(match)
+    guessed_sentence = [match for match in first_word_matches if check_sequence_match(trie, match, words, mismatched, start_index)]
 
-    return gussed_sentence
+    return guessed_sentence
 
 
 def complete_sentence(trie, user_input):

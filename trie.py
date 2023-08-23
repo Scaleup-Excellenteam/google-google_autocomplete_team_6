@@ -27,8 +27,8 @@ class Trie:
         node = self.root
         for char in word:
             if char not in node.children:
-                return None
+                return []
             node = node.children[char]
         if node.is_end_of_word:
             return node.data_list
-        return None
+        return []
