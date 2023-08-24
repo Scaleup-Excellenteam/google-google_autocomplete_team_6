@@ -1,5 +1,5 @@
 import os
-
+import Levenshtein as lev
 
 class TrieNode:
     def __init__(self):
@@ -38,10 +38,21 @@ class TextTrie:
         return results
 
 
-# Main function to search for autocomplete results
 def search_autocomplete(trie, query):
     results = trie.search(query)
-    return results
+
+    def calculate_score(text):
+        return len(text) * 2  # Basic score calculation
+
+    # Calculate Levenshtein distance and adjust the score
+    for i, (file_path, sentence) in enumerate(results):
+        lev_distance = lev.distance(query, sentence)
+        score = calculate_score(sentence) - lev_distance  # Adjust the score
+        results[i] = (file_path, sentence, score)
+
+    results.sort(key=lambda x: x[2], reverse=True)  # Sort by score in descending order
+
+    return results[:5]  # Return the top 5 results
 
 
 # Main function to build the trie
@@ -63,7 +74,7 @@ def build_trie(files_directory):
 
 
 def main():
-    files_directory = r'C:\Users\User\Desktop\Archive (1)'
+    files_directory = r'data'
 
     # Check if the directory exists
     if not os.path.exists(files_directory):
@@ -76,8 +87,8 @@ def main():
             if user_input.lower() == 'exit':
                 break
             results = search_autocomplete(trie, user_input)
-            for file_path, sentence in results:
-                print(f"File: {file_path}\nLine: {sentence}\n\n")
+            for file_path, sentence, score in results:
+                print(f"File: {file_path}\nLine: {sentence}\nScore: {score}\n\n")
 
 
 if __name__ == '__main__':
