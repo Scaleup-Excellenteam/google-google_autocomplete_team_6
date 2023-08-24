@@ -113,7 +113,8 @@ def get_score(line_content, input_sentence, offset):
     score = base_score
 
     edits = editops(line_guessed, input_sentence)
-
+    if len(edits) > 1:
+        return 0
     for op, _, pos in edits:
         if op == "replace":
             deduction = REPLACE_SCORE[min(pos, 4)]  # We use min to ensure that we never go out of the list bounds
@@ -133,8 +134,8 @@ def get_best_kֵ_completions(trie, user_input) -> List[AutoCompleteData]:
 
     for guess in guessed_sentences:
         offset = get_offset(guess['line_content'], guess['word_index'], input_words, start_index)
-        mismatched_word = None if not mismatched else input_words[start_index - 1]
         score = get_score(guess['line_content'], user_input, offset)
+        if score == 0: continue
         auto_data = AutoCompleteData(guess['line_content'], guess['file_name'], offset, score)
         potential_results.append(auto_data)
 
